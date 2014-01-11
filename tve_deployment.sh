@@ -1,18 +1,23 @@
 #!/bin/bash
 # Requirements: cloned repositories into acquia, nbcutve and publisher7 respectively
 
+# initialize
 clear
-
 UPDATE=0
-cd acquia
+echo "Starting deployment process"
+echo ""
 
-echo "Fetching latest built tags..."
+# update tags from acquia repository
+cd acquia
+echo "Fetching latest tags from Acquia repository..."
 git fetch --tags
 echo "Done"
+echo ""
 
 # get the latest acquia build tag
 LATEST_BUILD_TAG=$(git describe --tags `git rev-list --tags --max-count=1` 2>&1)
-echo "Current build tag is $LATEST_BUILD_TAG"
+echo "Current build tag: $LATEST_BUILD_TAG"
+echo ""
 cd ..
 arrIN=(${LATEST_BUILD_TAG//-/ })
 
@@ -35,23 +40,26 @@ TVE_VER_LATEST=${TVE_VER_LATEST[0]}
 BRANCH_LATEST=${arrIN[3]}
 
 # check if all version tags extracted successfully
-if [ $BUILD_VER_LATEST ] || [ $P7_VER_LATEST ] || [ $TVE_VER_LATEST ] ; then
+if [ $BUILD_VER_LATEST ] || [ $P7_VER_LATEST ] || [ $TVE_VER_LATEST ] || [ $BRANCH_LATEST ] ; then
   echo "Build:      $BUILD_VER_LATEST"
   echo "Publisher7: $P7_VER_LATEST"
   echo "NBCU TVE:   $TVE_VER_LATEST"
   echo "Branch:     $BRANCH_LATEST"
+  echo ""
 else 
-  echo "Problem to extract some important data (version tag). Exit..."
+  echo "Error: Could not parse version tag."
   exit
 fi
 
-read -n 1 -p "Are You sure to start new build deployment (y/[a]): " AMSURE 
+read -n 1 -p "Press 'y' to start new build deployment: " AMSURE
 [ "$AMSURE" = "y" ] || exit
-echo "" 1>&2
-read -p "Set build version (current $BUILD_VER_LATEST): " BUILD_VER
+echo ""
+read -p "Set new build version (current $BUILD_VER_LATEST): " BUILD_VER
 echo "Build version is set to $BUILD_VER"
-read -n 1 -p "Change Publisher7 forked(!) version (current $P7_VER_LATEST)? (y/[a]): " AMSURE 
-echo "" 1>&2
+echo ""
+
+read -n 1 -p "Press 'y' to change Publisher7 (forked) version (current is: $P7_VER_LATEST): " AMSURE 
+echo ""
 
 if [ "$AMSURE" = "y" ] ; then
   cd publisher7
