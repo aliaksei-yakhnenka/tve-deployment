@@ -106,13 +106,16 @@ if [ "$AMSURE" = "y" ] ; then
   
   # setup branch
   LOCAL_BRANCH=$(git branch | sed -n -e 's/^\* \(.*\)/\1/p')
-  echo "Local git branch is: $LOCAL_BRANCH"
+  echo "Current branch is: $LOCAL_BRANCH"
   BRANCH_LATEST=$LOCAL_BRANCH
-  read -n 1 -p "Checkout other branch? (y/[a]): " AMSURE 
+  read -n 1 -p "Switch to other branch? (y/[a]): " AMSURE 
   echo "" 1>&2
   if [ "$AMSURE" = "y" ] ; then
-	read -p "Branch name: " LOCAL_BRANCH
-	echo "Checkout to $LOCAL_BRANCH branch..."
+	echo "Available branches:"
+	git branch --list
+	echo ""
+	read -p "Type in branch name: " LOCAL_BRANCH
+	echo "Switching to branch: $LOCAL_BRANCH"
 	git checkout "$LOCAL_BRANCH"
   fi
 
