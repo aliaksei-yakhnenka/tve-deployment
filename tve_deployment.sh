@@ -11,21 +11,18 @@ UPDATE=0
 cd acquia
 echo "Updating local Acquia repository..."
 git fetch --tags
-echo "Done."
-echo ""
+echo -e "Done.\n"
 
 # get the latest acquia build tag
 LATEST_BUILD_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
 LATEST_BUILD_TAG_PARSED=(${LATEST_BUILD_TAG//-/ })
-echo "Latest build tag: $LATEST_BUILD_TAG"
-echo ""
-echo "Build info: "
-echo "${LATEST_BUILD_TAG//-/$'\n'}"
-echo ""
+echo -e "Latest build tag: $LATEST_BUILD_TAG\n"
+echo -e "Build info:\n"
+echo -e "${LATEST_BUILD_TAG//-/$'\n'}\n"
 cd ..
 
 read -n 1 -p "Start new build deployment? (y/n): " CONFIRM
-[ "$CONFIRM" = "y" ] || exit
+[ "$CONFIRM" = "y" ] || exit 0
 echo ""
 
 # get last build version
@@ -64,12 +61,13 @@ echo ""
 
 if [ "$CONFIRM" = "y" ] ; then
   cd publisher7
-  echo "Pulling code from forked Publisher7 git repository..."
+  echo "Updating local Publisher7 repository..."
   git fetch origin
   git checkout tve || (echo "Could not checkout master" && exit 1)
   git pull --ff-only origin tve || (echo "Could not pull. Merge was likely not a fast forward" && exit 1)
+  echo -e "Done.\n"
+  
   read -n 1 -p "List all forked Publisher7 tags? (y/n): " CONFIRM 
-  echo ""
   if [ "$CONFIRM" = "y" ] ; then
     git tag
   fi
@@ -107,13 +105,17 @@ fi
 read -n 1 -p "Deploy TVE? (y/n): " CONFIRM 
 echo ""
 
+# parse tve tag from latest build
+TVE_TAG_LATEST=${LATEST_BUILD_TAG_PARSED[1]}
+TVE_TAG_LATEST=(${P7_VERSION_LATEST//tve_/ })
+TVE_TAG_LATEST=${P7_VERSION_LATEST[0]}
+
 if [ "$CONFIRM" = "y" ] ; then
   cd nbcutve
   # setup branch
-  #LOCAL_BRANCH=$(git branch | sed -n -e 's/^\* \(.*\)/\1/p')
   LOCAL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
   echo "Current branch: $LOCAL_BRANCH"
-  BRANCH_LATEST=$LOCAL_BRANCH
+  TVE_BRANCH=$LOCAL_BRANCH
   read -n 1 -p "Switch to other branch? (y/n): " CONFIRM 
   echo ""
   if [ "$CONFIRM" = "y" ] ; then
@@ -129,24 +131,24 @@ if [ "$CONFIRM" = "y" ] ; then
 	echo ""
 	echo "Switching to branch: $LOCAL_BRANCH"
 	git checkout "$LOCAL_BRANCH"
-	BRANCH_LATEST=$LOCAL_BRANCH
+	TVE_BRANCH=$LOCAL_BRANCH
   fi
   
-  echo "Updating branch $BRANCH_LATEST..."
-  git pull origin "$BRANCH_LATEST"
+  echo "Updating branch $TVE_BRANCH..."
+  git pull origin "$TVE_BRANCH"
   echo "Done."
 
   # detect tag prefix  
   TAG_PREFIX="dev"
-  if [[ "$BRANCH_LATEST" == "master" ]] ; then
+  if [[ "$TVE_BRANCH" == "master" ]] ; then
     TAG_PREFIX="r"
   fi
   
-  if [[ "$BRANCH_LATEST" == "dev" ]] ; then
+  if [[ "$TVE_BRANCH" == "dev" ]] ; then
     TAG_PREFIX="dev"
   fi
   
-  if [[ "$BRANCH_LATEST" == "release_candidate"* ]] ; then
+  if [[ "$TVE_BRANCH" == "release_candidate"* ]] ; then
     TAG_PREFIX="rc"
   fi
   
@@ -174,8 +176,10 @@ if [ "$CONFIRM" = "y" ] ; then
       git push -u origin "$TVE_TAG"
 	fi
 	
+	read -p "Enter previous TVE tag for changelog: " TVE_TAG_COMPARE
+	
 	# export changelog to a file
-	git log "v$TVE_VER_LATEST".."v$TVE_VER" --merges --format="Date: %ci%nAuthor: %an (%ae)%nCommit: %s%nDescription: %b%n-------------------------------%n" > ../changelogs/changelog."$BRANCH_LATEST"."v$TVE_VER_LATEST"__"v$TVE_VER".txt
+	git log "$TVE_TAG_COMPARE".."$TVE_TAG" --merges --format="Date: %ci%nAuthor: %an (%ae)%nCommit: %s%nDescription: %b%n-------------------------------%n" > ../changelogs/changelog."$TVE_BRANCH"."$TVE_TAG_COMPARE"__"$TVE_TAG".txt
 	
 	# rsync files
     echo "Synchronizing TVE code to acquia/ directory..."
@@ -184,7 +188,7 @@ if [ "$CONFIRM" = "y" ] ; then
     UPDATE=1
   fi
 else
-  TVE_VER=$TVE_VER_LATEST
+  TVE_TAG=$TVE_TAG_LATEST
   echo ""
 fi
 
@@ -193,7 +197,6 @@ fi
 
 if [ "$UPDATE" = 1 ] ; then
   cd acquia
-  #BUILD_TAG="build${BUILD_VERSION}-p${P7_VER}-nbcutve${TVE_VER}-${BRANCH_LATEST}"
   BUILD_TAG="build_${BUILD_VERSION}-tve_${TVE_TAG}-pub_${P7_VER}"
   git add -A
   git status
