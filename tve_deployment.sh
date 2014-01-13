@@ -23,40 +23,6 @@ echo "Build info: "
 echo "${LATEST_BUILD_TAG//-/$'\n'}"
 echo ""
 cd ..
-<<COMMENT1
-LATEST_BUILD_TAG_PARSED=(${LATEST_BUILD_TAG//-/ })
-
-# parse build version
-LAST_BUILD_VERSION=${LATEST_BUILD_TAG_PARSED[0]}
-LAST_BUILD_VERSION=(${LAST_BUILD_VERSION//build/ })
-LAST_BUILD_VERSION=${LAST_BUILD_VERSION[0]}
-
-# parse publisher7 version
-P7_VERSION_LATEST=${LATEST_BUILD_TAG_PARSED[1]}
-P7_VERSION_LATEST=(${P7_VERSION_LATEST//p/ })
-P7_VERSION_LATEST=${P7_VERSION_LATEST[0]}
-
-# parse tve version
-TVE_VER_LATEST=${LATEST_BUILD_TAG_PARSED[2]}
-TVE_VER_LATEST=(${TVE_VER_LATEST//nbcutve/ })
-TVE_VER_LATEST=${TVE_VER_LATEST[0]}
-
-# parse git branch
-BRANCH_LATEST=${LATEST_BUILD_TAG_PARSED[3]}
-
-# check if all version tags extracted successfully
-if [ $LAST_BUILD_VERSION ] || [ $P7_VERSION_LATEST ] || [ $TVE_VER_LATEST ] || [ $BRANCH_LATEST ] ; then
-  echo "Build:      $LAST_BUILD_VERSION"
-  echo "Publisher7: $P7_VERSION_LATEST"
-  echo "NBCU TVE:   $TVE_VER_LATEST"
-  echo "Branch:     $BRANCH_LATEST"
-  echo ""
-else 
-  echo "Error: Could not parse latest build tag."
-  exit
-fi
-COMMENT1
-
 
 read -n 1 -p "Start new build deployment? (y/n): " CONFIRM
 [ "$CONFIRM" = "y" ] || exit
@@ -64,7 +30,7 @@ echo ""
 
 # get last build version
 LAST_BUILD_VERSION=${LATEST_BUILD_TAG_PARSED[0]}
-LAST_BUILD_VERSION=(${LAST_BUILD_VERSION//build/ })
+LAST_BUILD_VERSION=(${LAST_BUILD_VERSION//build_/ })
 LAST_BUILD_VERSION=${LAST_BUILD_VERSION[0]}
 
 # setup new build version
@@ -88,8 +54,8 @@ echo ""
 ################### setup publisher7 ###################
 
 # parse publisher7 version
-P7_VERSION_LATEST=${LATEST_BUILD_TAG_PARSED[1]}
-P7_VERSION_LATEST=(${P7_VERSION_LATEST//p/ })
+P7_VERSION_LATEST=${LATEST_BUILD_TAG_PARSED[2]}
+P7_VERSION_LATEST=(${P7_VERSION_LATEST//pub_/ })
 P7_VERSION_LATEST=${P7_VERSION_LATEST[0]}
 
 echo "Publisher7 (forked) version is: $P7_VERSION_LATEST"
@@ -228,7 +194,7 @@ fi
 if [ "$UPDATE" = 1 ] ; then
   cd acquia
   #BUILD_TAG="build${BUILD_VERSION}-p${P7_VER}-nbcutve${TVE_VER}-${BRANCH_LATEST}"
-  BUILD_TAG="build_${BUILD_VERSION}-tve_${TVE_VER}-pub_${P7_VER}"
+  BUILD_TAG="build_${BUILD_VERSION}-tve_${TVE_TAG}-pub_${P7_VER}"
   git add -A
   git status
   read -n 1 -p "Press 'y' to commit these changes under $BUILD_TAG: " CONFIRM 
