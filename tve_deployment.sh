@@ -4,7 +4,7 @@
 # initialize
 clear
 UPDATE=0
-echo "Starting deployment process"
+echo "Starting deployment process."
 echo ""
 
 # update tags from acquia repository
@@ -51,14 +51,26 @@ else
   exit
 fi
 
+# setup build version
 read -n 1 -p "Press 'y' to start new build deployment: " AMSURE
 [ "$AMSURE" = "y" ] || exit
 echo ""
-read -p "Set new build version (current $BUILD_VER_LATEST): " BUILD_VER
+NEXT_BUILD_VER=$(($BUILD_VER_LATEST+1))
+
+read -n 1 -p "Next build version will be: $NEXT_BUILD_VER. Press 'y' to change: " CONFIRM
+echo ""
+if [ "$CONFIRM" = "y" ] ; then
+  echo "Enter new build version:"
+  read BUILD_VER
+else
+  BUILD_VER=$NEXT_BUILD_VER
+fi
+
 echo "Build version is set to $BUILD_VER"
 echo ""
 
-read -n 1 -p "Press 'y' to change Publisher7 (forked) version (current is: $P7_VER_LATEST): " AMSURE 
+# setup publisher
+read -n 1 -p "Publisher7 (forked) version is: $P7_VER_LATEST. Press 'y' to change: " AMSURE 
 echo ""
 
 if [ "$AMSURE" = "y" ] ; then
@@ -126,11 +138,11 @@ if [ "$AMSURE" = "y" ] ; then
   echo "Pulling code from TVE git repository..."
   git pull origin "$LOCAL_BRANCH"
   read -n 1 -p "Proceed with files sync for TVE? (y/[a]): " AMSURE 
-  echo "" 1>&2
+  echo ""
   
   if [ "$AMSURE" = "y" ] ; then
 	read -n 1 -p "Push tag v$TVE_VER? (y/[a]): " AMSURE 
-	echo "" 1>&2
+	echo ""
 	if [ "$AMSURE" = "y" ] ; then
 	  # Tag current code and push it back to TVE repo
 	  git tag "v$TVE_VER"
@@ -138,7 +150,7 @@ if [ "$AMSURE" = "y" ] ; then
 	fi
 	
 	# Export changelog to a file
-	git log "v$TVE_VER_LATEST".."v$TVE_VER" --merges --format="Date: %ci%nAuthor: %an (%ae)%nCommit: %s%nDescription: %b%n-------------------------%n" > ../changelogs/changelog.tve."v$TVE_VER_LATEST"__"v$TVE_VER".txt
+	git log "v$TVE_VER_LATEST".."v$TVE_VER" --merges --format="Date: %ci%nAuthor: %an (%ae)%nCommit: %s%nDescription: %b%n-------------------------%n" > ../changelogs/changelog."$BRANCH_LATEST"."v$TVE_VER_LATEST"__"v$TVE_VER".txt
 	
     echo "Synchronizing TVE code to acquia/ directory..."
     rsync -aq --exclude ".git/" --exclude ".gitignore" --exclude "default" --exclude "mvpdadmin" --exclude "all/drush" --exclude "all/libraries/ckeditor" --exclude "all/libraries/facebook-php-sdk" --exclude "all/libraries/plupload" --exclude "all/libraries/postscribe" --exclude "all/libraries/smartirc" --exclude "all/libraries/tinymce" --exclude "all/libraries/writecapture" --exclude "all/libraries/zend_crypt" --delete --force . ../acquia/docroot/sites
@@ -147,7 +159,7 @@ if [ "$AMSURE" = "y" ] ; then
   fi
 else
   TVE_VER=$TVE_VER_LATEST
-  echo "" 1>&2
+  echo ""
 fi
 
 if [ "$UPDATE" = 1 ] ; then
@@ -157,13 +169,13 @@ if [ "$UPDATE" = 1 ] ; then
   git add -A
   git status
   read -n 1 -p "Commit these changes under $BUILD_TAG tag? (y/[a]): " AMSURE 
-  echo "" 1>&2
+  echo ""
   if [ "$AMSURE" = "y" ] ; then
     git commit -m "$BUILD_TAG"
     git tag $BUILD_TAG
     git push -u origin $BUILD_TAG
   else
-    echo "" 1>&2
+    echo ""
     echo "Exit..."
   fi
   cd ..
