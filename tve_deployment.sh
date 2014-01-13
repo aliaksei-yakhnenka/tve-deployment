@@ -15,7 +15,7 @@ echo "Done"
 echo ""
 
 # get the latest acquia build tag
-LATEST_BUILD_TAG=$(git describe --tags `git rev-list --tags --max-count=1` 2>&1)
+LATEST_BUILD_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
 echo "Current build tag: $LATEST_BUILD_TAG"
 echo ""
 cd ..
@@ -47,7 +47,7 @@ if [ $BUILD_VER_LATEST ] || [ $P7_VER_LATEST ] || [ $TVE_VER_LATEST ] || [ $BRAN
   echo "Branch:     $BRANCH_LATEST"
   echo ""
 else 
-  echo "Error: Could not parse version tag."
+  echo "Error: Could not parse latest build tag."
   exit
 fi
 
@@ -89,34 +89,36 @@ if [ "$AMSURE" = "y" ] ; then
     UPDATE=1
   else
     P7_VER=$P7_VER_LATEST
-    echo "" 1>&2
+    echo ""
   fi
   
   cd ..
 else
   P7_VER=$P7_VER_LATEST
-  echo "" 1>&2
+  echo ""
 fi
 
-read -n 1 -p "Deploy TVE? (y/[a]): " AMSURE 
-echo "" 1>&2
+read -n 1 -p "Press 'y' to deploy TVE: " AMSURE 
+echo ""
 
 if [ "$AMSURE" = "y" ] ; then
   cd nbcutve
   
-  # setup branch
+  # setup tve branch
   LOCAL_BRANCH=$(git branch | sed -n -e 's/^\* \(.*\)/\1/p')
   echo "Current branch is: $LOCAL_BRANCH"
   BRANCH_LATEST=$LOCAL_BRANCH
-  read -n 1 -p "Switch to other branch? (y/[a]): " AMSURE 
-  echo "" 1>&2
+  read -n 1 -p "Switch to other branch? (y/n): " AMSURE 
+  echo ""
   if [ "$AMSURE" = "y" ] ; then
+	git fetch origin
 	echo "Available branches:"
-	git branch --list
+	git branch --list -a
 	echo ""
 	read -p "Type in branch name: " LOCAL_BRANCH
 	echo "Switching to branch: $LOCAL_BRANCH"
 	git checkout "$LOCAL_BRANCH"
+	BRANCH_LATEST=$LOCAL_BRANCH
   fi
 
   read -p "Set TVE version (current $TVE_VER_LATEST): " TVE_VER
